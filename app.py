@@ -14,12 +14,19 @@ st.markdown("""
     <style>
     .main-title { font-size: 2.2rem; font-weight: 800; color: #0284c7; margin-bottom: 0px; }
     .sub-title { font-size: 1rem; color: #64748b; margin-bottom: 20px; }
-    .stMetric { background-color: #f0f9ff; padding: 15px; border-radius: 10px; border: 1px solid #bae6fd; }
+    div[data-testid="stMetric"] {
+        background-color: #e0f2fe !important;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        border: 1px solid #0284c7 !important;
+    }
+    div[data-testid="stMetric"] label, div[data-testid="stMetric"] div {
+        color: #0369a1 !important;
+        font-weight: 700 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">Global Diabetes Analytics & Risk AI</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Full-Stack Capstone Project | Machine Learning & WHO Public Health Data</p>', unsafe_allow_html=True)
 
 # 2. Main Navigation Tabs
 tab_ml, tab_chat, tab_who, tab_daly, tab_overview = st.tabs([
