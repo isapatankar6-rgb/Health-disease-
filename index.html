@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Risk Predictor | Medical ML Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 24px; padding: 20px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); }
+        header h1 { font-size: 1.5rem; color: var(--primary-dark); }
+        header p { color: var(--text-muted); font-size: 0.9rem; }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: var(--text); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        .input-group input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; }
+        .input-group input:focus { border-color: var(--primary); }
+
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 16px; }
+        button:hover { background: var(--primary-dark); }
+
+        .result-box { text-align: center; padding: 20px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; display: none; margin-top: 16px; }
+        .risk-val { font-size: 2rem; font-weight: 700; color: var(--primary-dark); margin: 8px 0; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
+        .badge.low { background: #d1fae5; color: #065f46; }
+        .badge.high { background: #fee2e2; color: #991b1b; }
+
+        .feature-preview { display: flex; justify-content: space-around; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Diabetes Risk Predictor</h1>
+            <p>Capstone Project | Pima Indians Diabetes Dataset Analysis</p>
+        </header>
+
+        <div class="card">
+            <h2>Patient Clinical Indicators</h2>
+            <form id="calcForm">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Age (Years)</label>
+                        <input type="number" id="age" value="45" min="1" max="120" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Glucose Level (mg/dL)</label>
+                        <input type="number" id="glucose" value="148" min="30" max="500" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" id="weight" value="80" step="0.1" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Height (meters)</label>
+                        <input type="number" id="height" value="1.70" step="0.01" required>
+                    </div>
+                </div>
+                <button type="submit">Predict Diabetes Risk</button>
+            </form>
+
+            <div id="resultBox" class="result-box">
+                <div>Predicted Diabetes Probability</div>
+                <div id="riskValue" class="risk-val">0%</div>
+                <div id="riskBadge" class="badge low">Low Risk</div>
+                
+                <div class="feature-preview">
+                    <div>Calculated BMI: <strong id="bmiVal">0</strong></div>
+                    <div>Log Glucose: <strong id="logGlucoseVal">0</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Feature Transformation Visualizer</h2>
+            <canvas id="transformChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Feature Engineering Logic
+        function calculateRisk(age, glucose, weight, height) {
+            // Feature Construction: BMI = weight / height^2
+            const bmi = weight / (height * height);
+            
+            // Transformation: Log Transform for Glucose
+            const logGlucose = Math.log(glucose + 1);
+
+            // Logistic Regression model approximation trained on Pima dataset
+            const z = -6.2 + (0.035 * age) + (0.085 * bmi) + (1.15 * logGlucose);
+            const probability = 1 / (1 + Math.exp(-z));
+
+            return {
+                bmi: bmi.toFixed(1),
+                logGlucose: logGlucose.toFixed(2),
+                probability: (probability * 100).toFixed(1),
+                isHigh: probability > 0.45
+            };
+        }
+
+        // Form Submit Event
+        document.getElementById('calcForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const age = parseFloat(document.getElementById('age').value);
+            const glucose = parseFloat(document.getElementById('glucose').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+
+            const res = calculateRisk(age, glucose, weight, height);
+
+            document.getElementById('bmiVal').innerText = res.bmi;
+            document.getElementById('logGlucoseVal').innerText = res.logGlucose;
+            document.getElementById('riskValue').innerText = res.probability + '%';
+
+            const badge = document.getElementById('riskBadge');
+            badge.innerText = res.isHigh ? 'High Risk' : 'Low Risk';
+            badge.className = 'badge ' + (res.isHigh ? 'high' : 'low');
+
+            document.getElementById('resultBox').style.display = 'block';
+            updateChart(glucose, parseFloat(res.logGlucose));
+        });
+
+        // Initialize Chart
+        let chart;
+        function initChart() {
+            const ctx = document.getElementById('transformChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [70, 90, 110, 130, 150, 170, 190, 210],
+                    datasets: [{
+                        label: 'Log(Glucose + 1) Transformation Curve',
+                        data: [70, 90, 110, 130, 150, 170, 190, 210].map(g => Math.log(g + 1)),
+                        borderColor: '#0284c7',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+        function updateChart(g, logG) {
+            if(chart) {
+                chart.data.labels.push(g);
+                chart.data.datasets[0].data.push(logG);
+                chart.update();
+            }
+        }
+        initChart();
+    </script>
+</body>
+</html>
