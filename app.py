@@ -27,7 +27,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Main Navigation Tabs (Defined FIRST to avoid NameErrors)
+# 2. Main Navigation Tabs
 tab_ml, tab_chat, tab_who, tab_daly, tab_overview = st.tabs([
     "🩺 AI Patient Predictor", 
     "💬 AI Clinical Assistant",
@@ -41,7 +41,7 @@ tab_ml, tab_chat, tab_who, tab_daly, tab_overview = st.tabs([
 # ---------------------------------------------------------
 with tab_ml:
     st.header("Patient Clinical Risk Calculator")
-    st.write("Comprehensive Diabetes Risk Calculator with calibrated diagnostic thresholds.")
+    st.write("Comprehensive Diabetes Assessment Model calibrated on clinical diagnostic thresholds.")
     
     col1, col2, col3 = st.columns(3)
     
@@ -63,7 +63,7 @@ with tab_ml:
     bmi = weight / (height ** 2)
     activity_mod = -0.3 if physical_activity == "High (>150 mins)" else (0.2 if physical_activity == "Low (<30 mins)" else 0.0)
     
-    # Calibrated Risk Model Formula
+    # Calibrated Risk Calculation
     z = -8.4 + (0.038 * glucose) + (0.093 * bmi) + (0.027 * age) + (0.012 * blood_pressure) + (0.94 * pedigree) + (0.001 * insulin) + activity_mod
     probability = 1 / (1 + np.exp(-z))
     risk_pct = round(probability * 100, 1)
@@ -72,7 +72,7 @@ with tab_ml:
     
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Calculated BMI", f"{bmi:.1f} kg/m²")
-    m2.metric("Fasting Glucose", "Normal" if glucose < 100 else ("Prediabetes" if glucose <= 125 else "Diabetic Range"))
+    m2.metric("Fasting Glucose Status", "Normal" if glucose < 100 else ("Prediabetes" if glucose <= 125 else "Diabetic Range"))
     m3.metric("Pedigree Index", f"{pedigree:.2f}")
     m4.metric("Diabetes Risk Score", f"{risk_pct}%")
     
@@ -81,10 +81,10 @@ with tab_ml:
     elif risk_pct >= 25.0:
         st.warning(f"⚡ Status: Moderate Risk ({risk_pct}%) — Lifestyle modifications advised.")
     else:
-        st.success(f"✅ Status: Low Risk ({risk_pct}%) — Metrics are within healthy reference intervals.")
+        st.success(f"✅ Status: Low Risk ({risk_pct}%) — Clinical metrics are within healthy reference intervals.")
 
 # ---------------------------------------------------------
-# TAB 2: AI CLINICAL CHATBOT (SAFE API HANDLING)
+# TAB 2: AI CLINICAL CHATBOT
 # ---------------------------------------------------------
 with tab_chat:
     st.header("AI Healthcare Assistant")
@@ -94,14 +94,14 @@ with tab_chat:
 
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            {"role": "assistant", "content": "Hello! I am your AI Clinical Assistant. How can I assist you today?"}
+            {"role": "assistant", "content": "Hello! I am your AI Clinical Assistant. How can I assist you with your health today?"}
         ]
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    if user_input := st.chat_input("Type your question here..."):
+    if user_input := st.chat_input("Type your medical query here..."):
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.write(user_input)
@@ -117,7 +117,7 @@ with tab_chat:
                     formatted_messages = [
                         {
                             "role": "system",
-                            "content": "You are an expert AI Health Assistant. Provide accurate, helpful, and concise medical advice."
+                            "content": "You are an expert AI Health Assistant. Provide accurate, empathetic, and evidence-based answers to any patient query."
                         }
                     ] + st.session_state.messages
 
@@ -138,7 +138,7 @@ with tab_chat:
 # ---------------------------------------------------------
 with tab_who:
     st.header("World Health Organization (WHO) API Data")
-    st.write("Connected to WHO Global Health Observatory API.")
+    st.write("Connected to WHO Global Health Observatory API Endpoint.")
     
     @st.cache_data(ttl=3600)
     def fetch_who_data():
@@ -176,8 +176,9 @@ with tab_who:
 # ---------------------------------------------------------
 with tab_daly:
     st.header("State-wise Cost per DALY in India")
+    st.write("Disability-Adjusted Life Years (DALY) measure overall disease burden.")
     daly_img_url = "https://www.researchgate.net/publication/379309054/figure/fig2/AS:11431281310247232@1739793483419/State-wise-cost-per-DALY-in-India-The-figure-displays-the-estimated-cost-per-DALY-in.jpg"
-    st.image(daly_img_url, caption="Cost per DALY Across Indian States", use_container_width=True)
+    st.image(daly_img_url, caption="Estimated Cost per DALY Across Indian States", use_container_width=True)
 
 # ---------------------------------------------------------
 # TAB 5: ML OVERVIEW
