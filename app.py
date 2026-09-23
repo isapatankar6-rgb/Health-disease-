@@ -1,22 +1,43 @@
 import os
+import streamlit as st
+import numpy as np
+import pandas as pd
+import requests
 from groq import Groq
 
+# 1. Page Config
+st.set_page_config(page_title="Global Diabetes Analytics", page_icon="🩺", layout="wide")
+
+# 2. Tab Initialization (Make sure variable names match!)
+tab_ml, tab_chat, tab_who, tab_daly, tab_overview = st.tabs([
+    "🩺 AI Patient Predictor", 
+    "💬 AI Clinical Assistant",
+    "🌐 Live WHO Global Data", 
+    "📊 State-wise Cost per DALY", 
+    "🧠 ML Feature Importance"
+])
+
 # ---------------------------------------------------------
-# TAB 2: TRUE MULTI-TURN AI CLINICAL CHATBOT
+# TAB 1: AI PATIENT PREDICTOR
+# ---------------------------------------------------------
+with tab_ml:
+    st.header("Patient Clinical Risk Calculator")
+    # Tab 1 Code...
+
+# ---------------------------------------------------------
+# TAB 2: AI CLINICAL CHATBOT
 # ---------------------------------------------------------
 with tab_chat:
     st.header("AI Healthcare Assistant")
     st.write("Ask any questions regarding diabetes, diet, exercise, clinical metrics, or general health.")
 
-    # Initialize Groq client using Streamlit secrets or local environment key
     groq_api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
     
     if not groq_api_key:
-        st.warning("⚠️ Please configure `GROQ_API_KEY` in Streamlit Secrets to enable the live AI model.")
+        st.warning("⚠️ Please configure GROQ_API_KEY in Streamlit Secrets to enable the live AI model.")
     else:
         client = Groq(api_key=groq_api_key)
 
-        # System prompt setting clinical context and behavioral guidelines
         system_instruction = {
             "role": "system",
             "content": (
@@ -26,26 +47,21 @@ with tab_chat:
             )
         }
 
-        # Initialize full message history
         if "messages" not in st.session_state:
             st.session_state.messages = [
                 system_instruction,
-                {"role": "assistant", "content": "Hello! I am your AI Clinical Assistant. How can I assist you with your health or diabetes questions today?"}
+                {"role": "assistant", "content": "Hello! I am your AI Clinical Assistant. How can I assist you today?"}
             ]
 
-        # Render conversation history (excluding the hidden system instruction)
         for msg in st.session_state.messages[1:]:
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
 
-        # Handle new user input
         if user_input := st.chat_input("Type any medical or lifestyle query here..."):
-            # Append user message to state
             st.session_state.messages.append({"role": "user", "content": user_input})
             with st.chat_message("user"):
                 st.write(user_input)
 
-            # Generate dynamic LLM response across full conversation context
             with st.chat_message("assistant"):
                 with st.spinner("Analyzing query..."):
                     try:
@@ -57,7 +73,6 @@ with tab_chat:
                         )
                         reply = response.choices[0].message.content
                         st.write(reply)
-                        # Save assistant response to state history
                         st.session_state.messages.append({"role": "assistant", "content": reply})
                     except Exception as e:
                         st.error(f"Error communicating with AI model: {e}")
